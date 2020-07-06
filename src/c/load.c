@@ -25,6 +25,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @version 0.3.0
+ */
+
 #include <stdlib.h>
 
 
@@ -41,14 +45,21 @@ void ThrowMissingMethod(const char* metName, const char* err);
     #define ROP_LIB_NAME "librnp-0.dll"
     static HMODULE hlib = NULL;
 
+#ifdef ROP_LOAD_STATIC
+    static
+#endif
     void on_attach() {
-        hlib = LoadLibrary(TEXT(ROP_LIB_NAME));
+        if (hlib == NULL)
+            hlib = LoadLibrary(TEXT(ROP_LIB_NAME));
         if (hlib == NULL) {
             char buf[0x20]; snprintf(buf, sizeof(buf), "Error %08X", GetLastError());
             ThrowMissingLibrary(ROP_LIB_NAME, buf);
         }
     }
 
+#ifdef ROP_LOAD_STATIC
+    static
+#endif
     void on_detach() { if (hlib != NULL) FreeLibrary(hlib); hlib = NULL; }
 
     static void* RopDlSym(const char* symbol) {
@@ -63,6 +74,7 @@ void ThrowMissingMethod(const char* metName, const char* err);
         return NULL;
     }
 
+#ifndef ROP_LOAD_STATIC
     BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID reserved) {
         switch (reason) {
         case DLL_PROCESS_ATTACH: /*on_attach();*/ break;
@@ -70,6 +82,7 @@ void ThrowMissingMethod(const char* metName, const char* err);
         }
         return TRUE;
     }
+#endif
 
 #else
 
@@ -77,13 +90,22 @@ void ThrowMissingMethod(const char* metName, const char* err);
     #define ROP_LIB_NAME "librnp-0.so"
     static void *hlib = NULL;
 
+#ifndef ROP_LOAD_STATIC
     //__attribute__((constructor))
+#else
+    static
+#endif
     void on_attach() { 
-        hlib = dlopen(ROP_LIB_NAME, RTLD_LAZY); 
+        if (hlib == NULL)
+            hlib = dlopen(ROP_LIB_NAME, RTLD_LAZY); 
         if(hlib==NULL) ThrowMissingLibrary(ROP_LIB_NAME, dlerror()); 
     }
 
+#ifndef ROP_LOAD_STATIC
     __attribute__((destructor))
+#else
+    static
+#endif
     void on_detach() { if(hlib != NULL) dlclose(hlib); hlib = NULL; }
 
     static void* RopDlSym(const char *symbol) {
@@ -98,8 +120,17 @@ void ThrowMissingMethod(const char* metName, const char* err);
 
 #endif
 
+#ifdef ROP_LOAD_STATIC
+    void ROP_load() {
+        on_attach();
+    }
+    void ROP_unload() {
+        on_detach();
+    }
+#endif
+
 #define ROP_FFI_DEF_FX(rtype, symb, alist) \
-    rtype(*p##symb) alist = NULL; \
+    static rtype(*p##symb) alist = NULL; \
     rtype symb
 
 #define ROP_FFI_LOAD_SYMBOL(symb, lsymb) \

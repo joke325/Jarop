@@ -29,7 +29,7 @@ package tech.janky.jarop;
 
 
 /**
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public interface SessionPassCallBack {
@@ -38,5 +38,5 @@ public interface SessionPassCallBack {
         public boolean ret;
         public String outBuf;
     }
-    public Ret PassCallBack(RopSession ses, Object ctx, RopKey key, String pgpCtx, int bufLen);
+    public Ret PassCallBack(RopSession ses, Object ctx, RopKey key, String pgpCtx, int bufLen) throws RopError;
 }

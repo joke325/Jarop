@@ -37,7 +37,7 @@ import tech.janky.jarop.rop.RopLib;
 
 
 /**
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopOpVerify extends RopObject {
@@ -83,6 +83,63 @@ public class RopOpVerify extends RopObject {
         return new FileInfo(Util.PopString(lib, outs, ret, true), mtime);
     }
 
+    public final class ProtectionInfo {
+        public String mode;
+        public String cipher;
+        public boolean valid;
+        public ProtectionInfo(String mode, String cipher, boolean valid) { this.mode = mode; this.cipher = cipher; this.valid = valid; }
+    }    
+    public ProtectionInfo get_protection_info() throws RopError {
+        int ret = lib.rnp_op_verify_get_protection_info(opid, outs, outs, outs);
+        boolean valid = Util.PopBool(lib, outs, ret, false);
+        String cipher = Util.PopString(lib, outs, ret, false);
+        return new ProtectionInfo(Util.PopString(lib, outs, ret, true), cipher, valid);
+    }
+    public int get_recipient_count() throws RopError {
+        int ret = lib.rnp_op_verify_get_recipient_count(opid, outs);
+        return Util.PopInt(lib, outs, ret, true);
+    }
+    public RopRecipient get_used_recipient(int tag) throws RopError {
+        int ret = lib.rnp_op_verify_get_used_recipient(opid, outs);
+        RopRecipient recp = new RopRecipient(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(recp, tag);
+        return recp;
+    }
+    public RopRecipient get_used_recipient() throws RopError { 
+        return get_used_recipient(0); 
+    }
+    public RopRecipient get_recipient_at(int idx, int tag) throws RopError {
+        int ret = lib.rnp_op_verify_get_recipient_at(opid, idx, outs);
+        RopRecipient recp = new RopRecipient(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(recp, tag);
+        return recp;
+    }
+    public RopRecipient get_recipient_at(int idx) throws RopError {
+        return get_recipient_at(idx, 0);
+    }
+    public int get_symenc_count() throws RopError {
+        int ret = lib.rnp_op_verify_get_symenc_count(opid, outs);
+        return Util.PopInt(lib, outs, ret, true);
+    }
+    public RopSymEnc get_used_symenc(int tag) throws RopError {
+        int ret = lib.rnp_op_verify_get_used_symenc(opid, outs);
+        RopSymEnc senc = new RopSymEnc(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(senc, tag);
+        return senc;
+    }
+    public RopSymEnc get_used_symenc() throws RopError {
+        return get_used_symenc(0);
+    }
+    public RopSymEnc get_symenc_at(int idx, int tag) throws RopError {
+        int ret = lib.rnp_op_verify_get_symenc_at(opid, idx, outs);
+        RopSymEnc senc = new RopSymEnc(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(senc, tag);
+        return senc;
+    }
+    public RopSymEnc get_symenc_at(int idx) throws RopError {
+        return get_symenc_at(idx, 0);
+    }
+    
     private WeakReference<RopBind> own;
     private RopLib lib;
     private RopHandle opid;

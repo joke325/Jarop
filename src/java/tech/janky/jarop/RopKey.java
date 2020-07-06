@@ -39,7 +39,7 @@ import tech.janky.jarop.rop.RopLib;
 
 
 /** 
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopKey extends RopObject {
@@ -102,6 +102,10 @@ public class RopKey extends RopObject {
     public String revocation_reason() throws RopError {
         int ret = lib.rnp_key_get_revocation_reason(kid, outs);
         return Util.PopString(lib, outs, ret, true);
+    }
+    public void set_expiration(Duration expiry) throws RopError {
+        int ret = lib.rnp_key_set_expiration(kid, Util.TimeDelta2Sec(expiry));
+        Util.Return(ret);
     }
     public boolean is_revoked() throws RopError {
         int ret = lib.rnp_key_is_revoked(kid, outs);
@@ -290,26 +294,51 @@ public class RopKey extends RopObject {
     public void export_public(RopOutput output, boolean subkey, boolean armored) throws RopError {
         export(output, true, false, subkey, armored);
     }
+    public void export_public(RopOutput output, boolean subkey) throws RopError {
+        export(output, true, false, subkey, false);
+    }
     public void export_public(RopOutput output) throws RopError {
         export(output, true, false, false, false);
     }
     public void export_secret(RopOutput output, boolean subkey, boolean armored) throws RopError {
         export(output, false, true, subkey, armored);
     }
+    public void export_secret(RopOutput output, boolean subkey) throws RopError {
+        export(output, false, true, subkey, false);
+    }
     public void export_secret(RopOutput output) throws RopError {
         export(output, false, true, false, false);
     }
-    public void remove(boolean pub, boolean sec) throws RopError {
+    public void remove(boolean pub, boolean sec, boolean subkeys) throws RopError {
         int flags = (pub? ROPD.RNP_KEY_REMOVE_PUBLIC : 0);
         flags |= (sec? ROPD.RNP_KEY_REMOVE_SECRET : 0);
+        flags |= (subkeys? ROPD.RNP_KEY_REMOVE_SUBKEYS : 0);
         int ret = lib.rnp_key_remove(kid, flags);
         Util.Return(ret);
     }
+    public void remove(boolean pub, boolean sec) throws RopError {
+        remove(pub, sec, false);
+    }
+    public void remove_public(boolean subkeys) throws RopError {
+        remove(true, false, subkeys);
+    }
     public void remove_public() throws RopError {
-        remove(true, false);
+        remove(true, false, false);
+    }
+    public void remove_secret(boolean subkeys) throws RopError {
+        remove(false, true, subkeys);
     }
     public void remove_secret() throws RopError {
-        remove(false, true);
+        remove(false, true, false);
+    }
+    public void export_revocation(RopOutput output, String hash, String code, String reason) throws RopError {
+        RopHandle outp = (output!=null? output.getHandle() : null);
+        int ret = lib.rnp_key_export_revocation(kid, outp, 0, hash, code, reason);
+        Util.Return(ret);
+    }
+    public void revoke(String hash, String code, String reason) throws RopError {
+        int ret = lib.rnp_key_revoke(kid, 0, hash, code, reason);
+        Util.Return(ret);
     }
 
     private WeakReference<RopBind> own;

@@ -30,7 +30,7 @@ package tech.janky.jarop.rop;
 
 /**
 * Definitions
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 class RopLibDef {
@@ -41,7 +41,8 @@ class RopLibDef {
 
     public final static int RNP_KEY_REMOVE_PUBLIC = (1 << 0);
     public final static int RNP_KEY_REMOVE_SECRET = (1 << 1);
-    
+    public final static int RNP_KEY_REMOVE_SUBKEYS = (1 << 2);
+
     public final static int RNP_KEY_UNLOAD_PUBLIC = (1 << 0);
     public final static int RNP_KEY_UNLOAD_SECRET = (1 << 1);
 
@@ -63,6 +64,7 @@ class RopLibDef {
     // Flags for the key loading/saving functions.
     public final static int RNP_LOAD_SAVE_PUBLIC_KEYS = (1 << 0);
     public final static int RNP_LOAD_SAVE_SECRET_KEYS = (1 << 1);
+    public final static int RNP_LOAD_SAVE_PERMISSIVE = (1 << 8);
 
     // Flags for output structure creation.
     public final static int RNP_OUTPUT_FILE_OVERWRITE = (1 << 0);

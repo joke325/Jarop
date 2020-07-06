@@ -28,6 +28,6 @@
 package tech.janky.jarop.rop;
 
 /** 
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */

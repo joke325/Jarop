@@ -40,7 +40,7 @@ import tech.janky.jarop.rop.RopKeyCallBack;
 
 /**
 * Wraps FFI related ops
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopSession extends RopObject implements RopPassCallBack, RopKeyCallBack {
@@ -163,6 +163,15 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public RopOpVerify op_verify_create(RopInput input, RopInput signature) throws RopError {
         return op_verify_create(input, null, signature, 0);
     }
+    public String request_password(RopKey key, Object context) throws RopError {
+        RopHandle hkey = (key!=null? key.getHandle() : null);
+        int ret = lib.rnp_request_password(sid, hkey, context, outs);
+        RopHandle psw = Util.PopHandle(lib, outs, ret, true);
+        String spsw = RopHandle.Str(psw);
+        psw.ClearMemory();
+        lib.rnp_buffer_destroy(psw);
+        return spsw;
+    }
     public void load_keys(String format, RopInput input, boolean pub, boolean sec) throws RopError {
         RopHandle inp = (input!=null? input.getHandle() : null);
         int flags = (pub? ROPD.RNP_LOAD_SAVE_PUBLIC_KEYS : 0);
@@ -242,23 +251,33 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public RopKey generate_key_ex(String keyAlg, String subAlg, int keyBits, int subBits, String keyCurve, String subCurve, String userid, String password) throws RopError {
         return generate_key_ex(keyAlg, subAlg, keyBits, subBits, keyCurve, subCurve, userid, password, 0);
     }	
-    public RopData import_keys(RopInput input, boolean pub, boolean sec) throws RopError {
+    public RopData import_keys(RopInput input, boolean pub, boolean sec, boolean perm) throws RopError {
         RopHandle inp = (input!=null? input.getHandle() : null);
         int flags = (pub? ROPD.RNP_LOAD_SAVE_PUBLIC_KEYS : 0);
         flags |= (sec? ROPD.RNP_LOAD_SAVE_SECRET_KEYS : 0);
+        flags |= (perm? ROPD.RNP_LOAD_SAVE_PERMISSIVE : 0);
         int ret = lib.rnp_import_keys(sid, inp, flags, outs);
         RopData data = new RopData(own.get(), Util.PopHandle(lib, outs, ret, true), 0);
         own.get().PutObj(data, 0);
         return data;
     }
+    public RopData import_keys(RopInput input, boolean pub, boolean sec) throws RopError {
+        return import_keys(input, pub, sec, false);
+    }
+    public RopData import_keys_public(RopInput input, boolean perm) throws RopError {
+        return import_keys(input, true, false, perm);
+    }
     public RopData import_keys_public(RopInput input) throws RopError {
-        return import_keys(input, true, false);
+        return import_keys(input, true, false, false);
+    }
+    public RopData import_keys_secret(RopInput input, boolean perm) throws RopError {
+        return import_keys(input, false, true, perm);
     }
     public RopData import_keys_secret(RopInput input) throws RopError {
-        return import_keys(input, false, true);
+        return import_keys(input, false, true, false);
     }
     public RopData import_keys(RopInput input) throws RopError {
-        return import_keys(input, false, false);
+        return import_keys(input, false, false, false);
     }
 
     public void set_pass_provider(SessionPassCallBack getpasscb, Object getpasscbCtx) throws RopError {
@@ -285,6 +304,15 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
         int ret = lib.rnp_ffi_set_key_provider(sid, this, getkeycbCtx);
         Util.Return(ret);
     }
+    
+    public RopData import_signatures(RopInput input) throws RopError {
+        RopHandle inp = (input!=null? input.getHandle() : null);
+        int ret = lib.rnp_import_signatures(sid, inp, 0, outs);
+        RopData data = new RopData(own.get(), Util.PopHandle(lib, outs, ret, true), 0);
+        own.get().PutObj(data, 0);
+        return data;
+    }
+
     public void save_keys(String format, RopOutput output, boolean pub, boolean sec) throws RopError {
         RopHandle outp = (output!=null? output.getHandle() : null);
         int flags = (pub? ROPD.RNP_LOAD_SAVE_PUBLIC_KEYS : 0);
@@ -315,16 +343,20 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public RopPassCallBack.Ret PassCallBack(RopHandle ffi, Object ctx, RopHandle key, RopHandle pgpCtx, RopHandle buf, int bufLen) {
         if(passProvider != null) {
             // create new Session and Key handlers
+            RopSession ropSes = null;
+            RopKey ropKey = null;
             try {
-                RopSession ropSes = (!ffi.isNull()? new RopSession(own.get(), ffi) : null);
-                RopKey ropKey = (!key.isNull()? new RopKey(own.get(), key) : null);
+                ropSes = (!ffi.isNull()? new RopSession(own.get(), ffi) : null);
+                ropKey = (!key.isNull()? new RopKey(own.get(), key) : null);
                 SessionPassCallBack.Ret scbRet = passProvider.PassCallBack(ropSes, ctx, ropKey, RopHandle.Str(pgpCtx), bufLen);
+                return new RopPassCallBack.Ret(scbRet.ret, scbRet.outBuf);
+            } catch(RopError ex) {
+            } finally {
                 if(ropSes != null)
                     ropSes.Detach();
                 if(ropKey != null)
                     ropKey.Detach();
-                return new RopPassCallBack.Ret(scbRet.ret, scbRet.outBuf);
-            } catch(RopError ex) {}
+            }
         }
         return new RopPassCallBack.Ret(false, null);
     }
@@ -333,12 +365,15 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public void KeyCallBack(RopHandle ffi, Object ctx, RopHandle identifierType, RopHandle identifier, boolean secret) {
         if(keyProvider != null) {
             // create a new Session handler
+            RopSession ropSes = null;
             try {
-                RopSession ropSes = (!ffi.isNull()? new RopSession(own.get(), ffi) : null);
+                ropSes = (!ffi.isNull()? new RopSession(own.get(), ffi) : null);
                 keyProvider.KeyCallBack(ropSes, ctx, RopHandle.Str(identifierType), RopHandle.Str(identifier), secret);
+            } catch(RopError ex) {
+            } finally {
                 if(ropSes != null)
                     ropSes.Detach();
-            } catch(RopError ex) {}
+            }
         }
     }
     

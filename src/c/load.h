@@ -28,9 +28,16 @@
 #ifndef ROP_LIB_DYN_LOAD_H
 #define ROP_LIB_DYN_LOAD_H
 
+#define SCRWD_P /* BE AWARE */
+
+#ifndef PRINTFLIKE
+#define PRINTFLIKE(n, m)
+#endif
+
 #if defined(_WIN32) && defined(_MSC_VER)
 typedef long long ssize_t;
 #endif
+#include <rnp/rnp_def.h>
 #include <rnp/rnp.h>
 
 
@@ -38,7 +45,13 @@ typedef long long ssize_t;
 extern "C" {
 #endif
 
+#ifdef ROP_LOAD_STATIC
+    void ROP_load();
+    void ROP_unload();
+#endif
+
 #define dlF(n) dl_##n
+#define CALL dlF
 
 #ifndef ROP_DYN_IMPORT
 
@@ -57,7 +70,7 @@ extern "C" {
 ROP_DYN_IMPORT1(const char *, NULL, rnp_result_to_string, rnp_result_t);
 ROP_DYN_IMPORT0(const char *, NULL, rnp_version_string);
 ROP_DYN_IMPORT0(const char *, NULL, rnp_version_string_full);
-ROP_DYN_IMPORT0(uint32_t, -1, rnp_version);
+ROP_DYN_IMPORT0(uint32_t, -1, rnp_version SCRWD_P);
 ROP_DYN_IMPORT3(uint32_t, -1, rnp_version_for, uint32_t, uint32_t, uint32_t);
 ROP_DYN_IMPORT1(uint32_t, -1, rnp_version_major, uint32_t);
 ROP_DYN_IMPORT1(uint32_t, -1, rnp_version_minor, uint32_t);
@@ -80,10 +93,14 @@ ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_calculate_iterations, const char *, size_t
 ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_supports_feature, const char *, const char *, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_supported_features, const char *, char **);
 ROP_DYN_IMPORT4(
+rnp_result_t, -1, rnp_request_password, rnp_ffi_t, rnp_key_handle_t, const char*, char**);
+ROP_DYN_IMPORT4(
 rnp_result_t, -1, rnp_load_keys, rnp_ffi_t, const char *, rnp_input_t, uint32_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_unload_keys, rnp_ffi_t, uint32_t);
 ROP_DYN_IMPORT4(
 rnp_result_t, -1, rnp_import_keys, rnp_ffi_t, rnp_input_t, uint32_t, char **);
+ROP_DYN_IMPORT4(
+rnp_result_t, -1, rnp_import_signatures, rnp_ffi_t, rnp_input_t, uint32_t, char**);
 ROP_DYN_IMPORT4(
 rnp_result_t, -1, rnp_save_keys, rnp_ffi_t, const char *, rnp_output_t, uint32_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_get_public_key_count, rnp_ffi_t, size_t *);
@@ -220,6 +237,8 @@ ROP_DYN_IMPORT2(rnp_result_t, -1,
                     rnp_key_handle_t *);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_op_generate_destroy, rnp_op_generate_t);
 ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_key_export, rnp_key_handle_t, rnp_output_t, uint32_t);
+ROP_DYN_IMPORT6(rnp_result_t, -1, rnp_key_export_revocation, rnp_key_handle_t, rnp_output_t, uint32_t, const char*, const char*, const char*);
+ROP_DYN_IMPORT5(rnp_result_t, -1, rnp_key_revoke, rnp_key_handle_t, uint32_t, const char*, const char*, const char*);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_remove, rnp_key_handle_t, uint32_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_guess_contents, rnp_input_t, char **);
 ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_enarmor, rnp_input_t, rnp_output_t, const char *);
@@ -277,6 +296,7 @@ ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_key_allows_usage, rnp_key_handle_t, const char *, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_creation, rnp_key_handle_t, uint32_t *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_expiration, rnp_key_handle_t, uint32_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_set_expiration, rnp_key_handle_t, uint32_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_revoked, rnp_key_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_revocation_reason, rnp_key_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_superseded, rnp_key_handle_t, bool *);
@@ -365,6 +385,34 @@ ROP_DYN_IMPORT3(rnp_result_t, -1,
                     rnp_op_verify_signature_t *);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_op_verify_get_file_info, rnp_op_verify_t, char **, uint32_t *);
+ROP_DYN_IMPORT4(
+rnp_result_t, -1, rnp_op_verify_get_protection_info, rnp_op_verify_t, char**, char**, bool*);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_op_verify_get_recipient_count, rnp_op_verify_t, size_t*);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_op_verify_get_used_recipient, rnp_op_verify_t, rnp_recipient_handle_t*);
+ROP_DYN_IMPORT3(
+rnp_result_t, -1, rnp_op_verify_get_recipient_at, rnp_op_verify_t, size_t, rnp_recipient_handle_t*);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_op_verify_get_symenc_count, rnp_op_verify_t, size_t*);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_op_verify_get_used_symenc, rnp_op_verify_t, rnp_symenc_handle_t*);
+ROP_DYN_IMPORT3(
+rnp_result_t, -1, rnp_op_verify_get_symenc_at, rnp_op_verify_t, size_t, rnp_symenc_handle_t*);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_recipient_get_keyid, rnp_recipient_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_recipient_get_alg, rnp_recipient_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_symenc_get_cipher, rnp_symenc_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_symenc_get_aead_alg, rnp_symenc_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_symenc_get_hash_alg, rnp_symenc_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_symenc_get_s2k_type, rnp_symenc_handle_t, char**);
+ROP_DYN_IMPORT2(
+rnp_result_t, -1, rnp_symenc_get_s2k_iterations, rnp_symenc_handle_t, uint32_t*);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_op_verify_destroy, rnp_op_verify_t);
 ROP_DYN_IMPORT1(rnp_result_t, -1,
                     rnp_op_verify_signature_get_status,
@@ -387,6 +435,7 @@ ROP_DYN_IMPORT3(rnp_result_t, -1,
                     uint32_t *,
                     uint32_t *);
 ROP_DYN_IMPORT1(int, 0, rnp_buffer_destroy, void *);
+ROP_DYN_IMPORT2(void, 0, rnp_buffer_clear, void*, size_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_input_from_path, rnp_input_t *, const char *);
 ROP_DYN_IMPORT4(
 rnp_result_t, -1, rnp_input_from_memory, rnp_input_t *, const uint8_t *, size_t, bool);
@@ -479,6 +528,25 @@ ROP_DYN_IMPORT1(rnp_result_t, -1,
                     rnp_identifier_iterator_destroy,
                     rnp_identifier_iterator_t);
 
+#ifdef __cplusplus
+
+#define HCAST_FFI(hnd) static_cast<rnp_ffi_t>(hnd)
+#define HCAST_INP(hnd) static_cast<rnp_input_t>(hnd)
+#define HCAST_OUTP(hnd) static_cast<rnp_output_t>(hnd)
+#define HCAST_KEY(hnd) static_cast<rnp_key_handle_t>(hnd)
+#define HCAST_UID(hnd) static_cast<rnp_uid_handle_t>(hnd)
+#define HCAST_SIG(hnd) static_cast<rnp_signature_handle_t>(hnd)
+#define HCAST_OPSSN(hnd) static_cast<rnp_op_sign_signature_t>(hnd)
+#define HCAST_OPSIG(hnd) static_cast<rnp_op_sign_t>(hnd)
+#define HCAST_OPGEN(hnd) static_cast<rnp_op_generate_t>(hnd)
+#define HCAST_OPENC(hnd) static_cast<rnp_op_encrypt_t>(hnd)
+#define HCAST_OPVER(hnd) static_cast<rnp_op_verify_t>(hnd)
+#define HCAST_OPVES(hnd) static_cast<rnp_op_verify_signature_t>(hnd)
+#define HCAST_RECIP(hnd) static_cast<rnp_recipient_handle_t>(hnd)
+#define HCAST_SENC(hnd) static_cast<rnp_symenc_handle_t>(hnd)
+#define HCAST_IDIT(hnd) static_cast<rnp_identifier_iterator_t>(hnd)
+
+#endif
 
 #ifdef __cplusplus
 }

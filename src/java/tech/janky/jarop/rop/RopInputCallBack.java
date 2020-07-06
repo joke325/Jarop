@@ -29,12 +29,14 @@ package tech.janky.jarop.rop;
 
 
 /**
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public interface RopInputCallBack {
     public final class Ret {
-        public Ret(byte[] inBuf, long inLen) { this.inBuf = inBuf; this.inLen = inLen; }
+        public Ret(byte[] inBuf, long inLen) { this.ret = (inBuf!=null && inLen>=0); this.inBuf = inBuf; this.inLen = inLen; }
+        public Ret(boolean ret, byte[] inBuf, long inLen) { this.ret = ret; this.inBuf = inBuf; this.inLen = inLen; }
+        protected boolean ret;
         protected byte[] inBuf;
         protected long inLen;
     }

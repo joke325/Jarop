@@ -25,6 +25,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @version 0.3.0
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <jni.h>
@@ -36,7 +40,7 @@ extern "C" {
     
 static void key_callback(rnp_ffi_t ffi, void *app_ctx, const char *identifier_type, const char *identifier, bool secret);
 static bool pass_callback(rnp_ffi_t ffi, void *app_ctx, rnp_key_handle_t key, const char *pgp_context, char buf[], size_t buf_len);
-static ssize_t input_read_callback(void *app_ctx, void *buf, size_t len);
+static bool input_read_callback(void *app_ctx, void *buf, size_t len, size_t *read);
 static void input_close_callback(void *app_ctx);
 static bool output_write_callback(void *app_ctx, const void *buf, size_t len);
 static void output_close_callback(void *app_ctx, bool discard);
@@ -402,6 +406,18 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1supported_1features
     return ret;
 }
 
+//F(ffi: cd, key: cd, context: str, password: [cd]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1request_1password(JNIEnv *jenv, jobject jobj, jobject ffi, jobject key, jobject context, jobject password) {
+    void *cffi = Handle2Ptr(jenv, ffi);
+    void *ckey = Handle2Ptr(jenv, key);
+    ENCODE_1STRING(context);
+    char *cpassword = NULL;
+    rnp_result_t ret = dlF(rnp_request_password)(cffi, ckey, ccontext, CPTR(password));
+    AddStrHandle(jenv, password, cpassword);
+    ENCODE_FREE(context);
+    return ret;
+}
+
 //F(ffi: cd, format_: str, input_: cd, flags: int) -> int
 JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1load_1keys(JNIEnv *jenv, jobject jobj, jobject ffi, jobject format, jobject input, jint flags) {
     void *cffi = Handle2Ptr(jenv, ffi);
@@ -424,6 +440,15 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1import_1keys(JNIEnv
     void *cinput = Handle2Ptr(jenv, input);
     char *cresults = NULL;
     rnp_result_t ret = dlF(rnp_import_keys)(cffi, cinput, flags, CPTR(results));
+    AddStrHandle(jenv, results, cresults);
+    return ret;
+}
+
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1import_1signatures(JNIEnv *jenv, jobject jobj, jobject ffi, jobject input, jint flags, jobject results) {
+    void *cffi = Handle2Ptr(jenv, ffi);
+    void *cinput = Handle2Ptr(jenv, input);
+    char *cresults = NULL;
+    rnp_result_t ret = dlF(rnp_import_signatures)(cffi, cinput, flags, CPTR(results));
     AddStrHandle(jenv, results, cresults);
     return ret;
 }
@@ -766,6 +791,25 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1export(JNIEnv 
     return dlF(rnp_key_export)(ckey, coutput, flags);
 }
 
+//F(key: cd, output: cd, flags: int, hash: str, code: str, reason: str) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1export_1revocation(JNIEnv *jenv, jobject jobj, jobject key, jobject output, jint flags, jobject hash, jobject code, jobject reason) {
+    void *ckey = Handle2Ptr(jenv, key);
+    void *coutput = Handle2Ptr(jenv, output);
+    ENCODE_3STRINGS(hash, code, reason);
+    rnp_result_t ret = dlF(rnp_key_export_revocation)(ckey, coutput, flags, chash, ccode, creason);
+    ENCODE_FREE3(hash, code, reason);
+    return ret;
+}
+
+//F(key: cd, flags: int, hash: str, code: str, reason: str) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1revoke(JNIEnv *jenv, jobject jobj, jobject key, jint flags, jobject hash, jobject code, jobject reason) {
+    void *ckey = Handle2Ptr(jenv, key);
+    ENCODE_3STRINGS(hash, code, reason);
+    rnp_result_t ret = dlF(rnp_key_revoke)(ckey, flags, chash, ccode, creason);
+    ENCODE_FREE3(hash, code, reason);
+    return ret;
+}
+
 //F(key: cd, flags: int) -> int
 JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1remove(JNIEnv *jenv, jobject jobj, jobject key, jint flags) {
     void *ckey = Handle2Ptr(jenv, key);
@@ -1071,6 +1115,12 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1get_1expiratio
     rnp_result_t ret = dlF(rnp_key_get_expiration)(ckey, CPTR(result));
     AddLong(jenv, result, cresult);
     return ret;
+}
+
+//F(key: cd, expiry: int) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1key_1set_1expiration(JNIEnv *jenv, jobject jobj, jobject key, jlong expiry) {
+    void *ckey = Handle2Ptr(jenv, key);
+    return dlF(rnp_key_set_expiration)(ckey, (uint32_t)expiry);
 }
 
 //F(key: cd, result: [bool]) -> int
@@ -1417,6 +1467,136 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1fi
     return ret;
 }
 
+//F(op: cd, mode: [str], cipher: [str], valid: [bool]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1protection_1info(JNIEnv *jenv, jobject jobj, jobject op, jobject mode, jobject cipher, jobject valid) {
+    void *cop = Handle2Ptr(jenv, op);
+    char *cmode = NULL;
+    char *ccipher = NULL;
+    bool cvalid = false;
+    rnp_result_t ret = dlF(rnp_op_verify_get_protection_info)(cop, CPTR(mode), CPTR(cipher), CPTR(valid));
+    AddStrHandle(jenv, mode, cmode);
+    AddStrHandle(jenv, cipher, ccipher);
+    AddBoolean(jenv, valid, cvalid);
+    return ret;
+}
+
+//F(op: cd, count: [int]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1recipient_1count(JNIEnv *jenv, jobject jobj, jobject op, jobject count) {
+    void *cop = Handle2Ptr(jenv, op);
+    size_t ccount = 0;
+    rnp_result_t ret = dlF(rnp_op_verify_get_recipient_count)(cop, CPTR(count));
+    AddInteger(jenv, count, ccount);
+    return ret;
+}
+
+//F(op: cd, recipient: [cd]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1used_1recipient(JNIEnv *jenv, jobject jobj, jobject op, jobject recipient) {
+    void *cop = Handle2Ptr(jenv, op);
+    rnp_recipient_handle_t crecipient = NULL;
+    rnp_result_t ret = dlF(rnp_op_verify_get_used_recipient)(cop, CPTR(recipient));
+    AddHandle(jenv, recipient, crecipient);
+    return ret;
+}
+
+//F(op: cd, idx: int, recipient: [cd]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1recipient_1at(JNIEnv *jenv, jobject jobj, jobject op, jint idx, jobject recipient) {
+    void *cop = Handle2Ptr(jenv, op);
+    rnp_recipient_handle_t crecipient = NULL;
+    rnp_result_t ret = dlF(rnp_op_verify_get_recipient_at)(cop, (size_t)idx, CPTR(recipient));
+    AddHandle(jenv, recipient, crecipient);
+    return ret;
+}
+
+//F(op: cd, count: [int]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1symenc_1count(JNIEnv *jenv, jobject jobj, jobject op, jobject count) {
+    void *cop = Handle2Ptr(jenv, op);
+    size_t ccount = 0;
+    rnp_result_t ret = dlF(rnp_op_verify_get_symenc_count)(cop, CPTR(count));
+    AddInteger(jenv, count, ccount);
+    return ret;
+}
+
+//F(op: cd, symenc: [cd]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1used_1symenc(JNIEnv *jenv, jobject jobj, jobject op, jobject symenc) {
+    void *cop = Handle2Ptr(jenv, op);
+    rnp_symenc_handle_t csymenc = NULL;
+    rnp_result_t ret = dlF(rnp_op_verify_get_used_symenc)(cop, CPTR(symenc));
+    AddHandle(jenv, symenc, csymenc);
+    return ret;
+}
+
+//F(op: cd, idx: int, symenc: [cd]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1get_1symenc_1at(JNIEnv *jenv, jobject jobj, jobject op, jint idx, jobject symenc) {
+    void *cop = Handle2Ptr(jenv, op);
+    rnp_symenc_handle_t csymenc = NULL;
+    rnp_result_t ret = dlF(rnp_op_verify_get_symenc_at)(cop, (size_t)idx, CPTR(symenc));
+    AddHandle(jenv, symenc, csymenc);
+    return ret;
+}
+
+//F(recipient: cd, keyid: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1recipient_1get_1keyid(JNIEnv *jenv, jobject jobj, jobject recipient, jobject keyid) {
+    void *crecipient = Handle2Ptr(jenv, recipient);
+    char *ckeyid = NULL;
+    rnp_result_t ret = dlF(rnp_recipient_get_keyid)(crecipient, CPTR(keyid));
+    AddStrHandle(jenv, keyid, ckeyid);
+    return ret;
+}
+
+//F(recipient: cd, alg: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1recipient_1get_1alg(JNIEnv *jenv, jobject jobj, jobject recipient, jobject alg) {
+    void *crecipient = Handle2Ptr(jenv, recipient);
+    char *calg = NULL;
+    rnp_result_t ret = dlF(rnp_recipient_get_alg)(crecipient, CPTR(alg));
+    AddStrHandle(jenv, alg, calg);
+    return ret;
+}
+
+//F(symenc: cd, cipher: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1symenc_1get_1cipher(JNIEnv *jenv, jobject jobj, jobject symenc, jobject cipher) {
+    void *csymenc = Handle2Ptr(jenv, symenc);
+    char *ccipher = NULL;
+    rnp_result_t ret = dlF(rnp_symenc_get_cipher)(csymenc, CPTR(cipher));
+    AddStrHandle(jenv, cipher, ccipher);
+    return ret;
+}
+
+//F(symenc: cd, alg: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1symenc_1get_1aead_1alg(JNIEnv *jenv, jobject jobj, jobject symenc, jobject alg) {
+    void *csymenc = Handle2Ptr(jenv, symenc);
+    char *calg = NULL;
+    rnp_result_t ret = dlF(rnp_symenc_get_aead_alg)(csymenc, CPTR(alg));
+    AddStrHandle(jenv, alg, calg);
+    return ret;
+}
+
+//F(symenc: cd, alg: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1symenc_1get_1hash_1alg(JNIEnv *jenv, jobject jobj, jobject symenc, jobject alg) {
+    void *csymenc = Handle2Ptr(jenv, symenc);
+    char *calg = NULL;
+    rnp_result_t ret = dlF(rnp_symenc_get_hash_alg)(csymenc, CPTR(alg));
+    AddStrHandle(jenv, alg, calg);
+    return ret;
+}
+
+//F(symenc: cd, type: [str]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1symenc_1get_1s2k_1type(JNIEnv *jenv, jobject jobj, jobject symenc, jobject type) {
+    void *csymenc = Handle2Ptr(jenv, symenc);
+    char *ctype = NULL;
+    rnp_result_t ret = dlF(rnp_symenc_get_s2k_type)(csymenc, CPTR(type));
+    AddStrHandle(jenv, type, ctype);
+    return ret;
+}
+
+//F(symenc: cd, iterations: [int]) -> int
+JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1symenc_1get_1s2k_1iterations(JNIEnv *jenv, jobject jobj, jobject symenc, jobject iterations) {
+    void *csymenc = Handle2Ptr(jenv, symenc);
+    uint32_t citerations = 0;
+    rnp_result_t ret = dlF(rnp_symenc_get_s2k_iterations)(csymenc, CPTR(iterations));
+    AddInteger(jenv, iterations, citerations);
+    return ret;
+}
+
 //F(op_: cd) -> int
 JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1destroy(JNIEnv *jenv, jobject jobj, jobject op) {
     void *cop = Handle2Ptr(jenv, op);
@@ -1470,6 +1650,12 @@ JNIEXPORT jint JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1op_1verify_1signatu
 JNIEXPORT void JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1buffer_1destroy(JNIEnv *jenv, jobject jobj, jobject ptr) {
     void *cptr = Handle2Ptr(jenv, ptr);
     dlF(rnp_buffer_destroy)(cptr);
+}
+
+//F(ptr: cd, size: int)
+JNIEXPORT void JNICALL Java_tech_janky_jarop_rop_RopLib_rnp_1buffer_1clear(JNIEnv *jenv, jobject jobj, jobject ptr, jlong size) {
+    void *cptr = Handle2Ptr(jenv, ptr);
+    dlF(rnp_buffer_clear)(cptr, (size_t)size);
 }
 
 //F(input_: [cd], path: str) -> int
@@ -1900,6 +2086,10 @@ JNIEXPORT jlong JNICALL Java_tech_janky_jarop_rop_RopHandle_WriteBytes(JNIEnv *j
     return len;
 }
 
+JNIEXPORT void JNICALL Java_tech_janky_jarop_rop_RopHandle_ClearMemory(JNIEnv *jenv, jobject jobj, jlong len) {
+    void *ptr = Handle2Ptr(jenv, jobj);
+    dlF(rnp_buffer_clear)(ptr, len>=0? (size_t)len : strlen(ptr));
+}
 
 static void key_callback(rnp_ffi_t ffi, void *app_ctx, const char *identifier_type, const char *identifier, bool secret) {
     if(app_ctx == NULL)
@@ -1936,7 +2126,7 @@ static bool pass_callback(rnp_ffi_t ffi, void *app_ctx, rnp_key_handle_t key, co
     return ret;
 }
 
-static ssize_t input_read_callback(void *app_ctx, void *buf, size_t len) {
+static bool input_read_callback(void *app_ctx, void *buf, size_t len, size_t *read) {
     if(app_ctx == NULL)
         return 0;
     jlong ret = 0;
@@ -1949,7 +2139,9 @@ static ssize_t input_read_callback(void *app_ctx, void *buf, size_t len) {
     if(midCB != NULL)
         ret = (*jenv)->CallLongMethod(jenv, app_ctx, midCB, jbuf, len);
     DettachFromVM(jenv, jeStat);
-    return ret;
+    if(read != NULL)
+        *read = (size_t)ret;
+    return ret>=0;
 }
 
 static void input_close_callback(void *app_ctx) {

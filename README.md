@@ -10,7 +10,7 @@ Java 1.8
 
 ## Build Instructions
 
-1. Download, build and install the [RNP OpenPGP library](https://github.com/rnpgp/rnp).
+1. Download, build and install shared version of the [RNP OpenPGP library](https://github.com/rnpgp/rnp).
 
 2. Configure this project.
 

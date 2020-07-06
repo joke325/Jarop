@@ -29,9 +29,9 @@ package tech.janky.jarop;
 
 
 /**
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public interface SessionKeyCallBack {
-    public void KeyCallBack(RopSession ses, Object ctx, String identifier_type, String identifier, boolean secret);
+    public void KeyCallBack(RopSession ses, Object ctx, String identifier_type, String identifier, boolean secret) throws RopError;
 }

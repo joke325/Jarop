@@ -39,7 +39,7 @@ import tech.janky.jarop.rop.RopInputCallBack;
 
 
 /** 
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopInput extends RopObject implements RopInputCallBack {
@@ -83,7 +83,7 @@ public class RopInput extends RopObject implements RopInputCallBack {
     public RopInputCallBack.Ret InputReadCallBack(Object ctx, long len) {
         if(inputCB != null) {
             byte[] data = inputCB.ReadCallBack(ctx, len);
-            if(data != null && data.length > 0)
+            if(data != null)
                 return new RopInputCallBack.Ret(data, data.length);
         }
         return new RopInputCallBack.Ret(null, 0);

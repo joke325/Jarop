@@ -36,7 +36,7 @@ import java.net.URI;
 
 
 /**
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopLib {
@@ -154,9 +154,11 @@ public class RopLib {
     public native int rnp_calculate_iterations(Object hash, long msec, Vector<?> iterations); 
     public native int rnp_supports_feature(Object type, Object name, Vector<?> supported); 
     public native int rnp_supported_features(Object type, Vector<?> result);
+    public native int rnp_request_password(RopHandle ffi, RopHandle key, Object context, Vector<?> password);
     public native int rnp_load_keys(RopHandle ffi, Object format, RopHandle input, int flags);
     public native int rnp_unload_keys(RopHandle ffi, int flags);
     public native int rnp_import_keys(RopHandle ffi, RopHandle input, int flags, Vector<?> results);
+    public native int rnp_import_signatures(RopHandle ffi, RopHandle input, int flags, Vector<?> results);
     public native int rnp_save_keys(RopHandle ffi, Object format, RopHandle output, int flags);
     public native int rnp_get_public_key_count(RopHandle ffi, Vector<?> count);
     public native int rnp_get_secret_key_count(RopHandle ffi, Vector<?> count);
@@ -196,6 +198,8 @@ public class RopLib {
     public native int rnp_op_generate_get_key(RopHandle op, Vector<?> handle);
     public native int rnp_op_generate_destroy(RopHandle op);
     public native int rnp_key_export(RopHandle key, RopHandle output, int flags);
+    public native int rnp_key_export_revocation(RopHandle key, RopHandle output, int flags, Object hash, Object code, Object reason);
+    public native int rnp_key_revoke(RopHandle key, int flags, Object hash, Object code, Object reason);
     public native int rnp_key_remove(RopHandle key, int flags);
     public native int rnp_guess_contents(RopHandle input, Vector<?> contents);
     public native int rnp_enarmor(RopHandle input, RopHandle output, Object type);
@@ -231,6 +235,7 @@ public class RopLib {
     public native int rnp_key_allows_usage(RopHandle key, Object usage, Vector<?> result);
     public native int rnp_key_get_creation(RopHandle key, Vector<?> result);
     public native int rnp_key_get_expiration(RopHandle key, Vector<?> result);
+    public native int rnp_key_set_expiration(RopHandle key, long expiry);
     public native int rnp_key_is_revoked(RopHandle key, Vector<?> result);
     public native int rnp_key_get_revocation_reason(RopHandle key, Vector<?> result);
     public native int rnp_key_is_superseded(RopHandle key, Vector<?> result);
@@ -271,6 +276,20 @@ public class RopLib {
     public native int rnp_op_verify_get_signature_count(RopHandle op, Vector<?> count);
     public native int rnp_op_verify_get_signature_at(RopHandle op, int idx, Object sig);
     public native int rnp_op_verify_get_file_info(RopHandle op, Vector<?> filename, Vector<?> mtime);
+    public native int rnp_op_verify_get_protection_info(RopHandle op, Vector<?> mode, Vector<?> cipher, Vector<?> valid);
+    public native int rnp_op_verify_get_recipient_count(RopHandle op, Vector<?> count);
+    public native int rnp_op_verify_get_used_recipient(RopHandle op, Vector<?> recipient);
+    public native int rnp_op_verify_get_recipient_at(RopHandle op, int idx, Vector<?> recipient);
+    public native int rnp_op_verify_get_symenc_count(RopHandle op, Vector<?> count);
+    public native int rnp_op_verify_get_used_symenc(RopHandle op, Vector<?> symenc);
+    public native int rnp_op_verify_get_symenc_at(RopHandle op, int idx, Vector<?> symenc);
+    public native int rnp_recipient_get_keyid(RopHandle recipient, Vector<?> keyid);
+    public native int rnp_recipient_get_alg(RopHandle recipient, Vector<?> alg);
+    public native int rnp_symenc_get_cipher(RopHandle symenc, Vector<?> cipher);
+    public native int rnp_symenc_get_aead_alg(RopHandle symenc, Vector<?> alg);
+    public native int rnp_symenc_get_hash_alg(RopHandle symenc, Vector<?> alg);
+    public native int rnp_symenc_get_s2k_type(RopHandle symenc, Vector<?> type);
+    public native int rnp_symenc_get_s2k_iterations(RopHandle symenc, Vector<?> iterations);
     public native int rnp_op_verify_destroy(RopHandle op);
     public native int rnp_op_verify_signature_get_status(RopHandle sig);
     public native int rnp_op_verify_signature_get_handle(RopHandle sig,Object handle);
@@ -278,6 +297,7 @@ public class RopLib {
     public native int rnp_op_verify_signature_get_key(RopHandle sig, Object key);
     public native int rnp_op_verify_signature_get_times(RopHandle sig, Vector<?> create, Vector<?> expires);
     public native void rnp_buffer_destroy(Object ptr);
+    public native void rnp_buffer_clear(RopHandle ptr, long size);
     public native int rnp_input_from_path(Vector<?> input, Object path);
     public native int rnp_input_from_memory(Vector<?> input, Object buf, long buf_len, boolean do_copy);
     public native int rnp_output_to_path(Vector<?> output, Object path);
@@ -415,10 +435,10 @@ final class RopCB {
     protected long InReadCB(RopHandle buf, long len) {
         if(lstner1 != null && lstner1 instanceof RopInputCallBack) {
             RopInputCallBack.Ret ret = ((RopInputCallBack)lstner1).InputReadCallBack(ctx, len);
-            if(ret.inLen > 0)
+            if(ret.ret && ret.inLen > 0)
                 return buf.WriteBytes(ret.inBuf, Math.min(ret.inLen, len));
         }
-        return 0;
+        return -1;
     }
 
     protected void InCloseCB() {

@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.TreeMap;
 import java.util.Stack;
+import java.io.File;
 
 import tech.janky.jarop.rop.RopLib;
 import tech.janky.jarop.rop.ROPE;
@@ -42,7 +43,7 @@ import tech.janky.jarop.rop.ROPD;
 
 /**
 * Root object of bindings for the RNP OpenPGP library
-* @version 0.2
+* @version 0.3.0
 * @since   0.2
 */
 public class RopBind {
@@ -59,7 +60,7 @@ public class RopBind {
         this.tags.add(new Integer(this.cnt)); 
         this.t2objs = new TreeMap<Integer, TreeMap<RopObject, Integer> >();
         this.outs = new Stack<Object>();
-        if(checkLibVer && !(this.lib.rnp_version() >= this.lib.rnp_version_for(0, 9, 0)))
+        if(checkLibVer && !(this.lib.rnp_version() >= this.lib.rnp_version_for(0, 9, 0)) && !(lib.rnp_version_commit_timestamp() >= ropid()))
             throw new RopError(ROP_ERROR_LIBVERSION);
     }
 
@@ -94,9 +95,18 @@ public class RopBind {
     
 
     // API
-
+    private String altHome = null;
     public String default_homedir() throws RopError {
         int ret = lib.rnp_get_default_homedir(outs);
+        if(ret == ROPE.RNP_ERROR_NOT_SUPPORTED) {
+            if(altHome == null) {
+                String home = System.getProperty("user.home");
+                if(home != null)
+                    altHome = home + File.separator + ".rnp";
+            }
+            if(altHome != null)
+                return altHome;
+        }
         return Util.PopString(lib, outs, ret, true);
     }
     public String version_string() {
@@ -351,6 +361,10 @@ public class RopBind {
     @Override
     public String toString() {
         return "tags = " + tags.size() + "\nt2objs = " + t2objs.size();
+    }
+
+    public long ropid() {
+        return 1592576775;
     }
 
     // Constants

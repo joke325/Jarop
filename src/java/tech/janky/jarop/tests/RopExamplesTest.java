@@ -128,16 +128,19 @@ public class RopExamplesTest {
 
         // Compare the jsons
         right_cmp_json(jso, ref_jso);
+
+        System.out.println("SUCCESS !");
     }
     
     private void right_cmp_json(Object json, Object ref_json) throws Exception {
         if(JSONArray.class.isInstance(ref_json))
             for(int idx = 0; idx < ((JSONArray)ref_json).size(); idx++) 
                 right_cmp_json(((JSONArray)json).get(idx), ((JSONArray)ref_json).get(idx));
-        else if(JSONObject.class.isInstance(ref_json) && ((JSONObject)ref_json).size() > 0)
-            for(Object key : ((JSONObject)ref_json).keySet())
-                right_cmp_json(((JSONObject)json).get(key), ((JSONObject)ref_json).get(key));
-        else if(!json.equals(ref_json))
+        else if(JSONObject.class.isInstance(ref_json)) {
+            if(((JSONObject)ref_json).size() > 0)
+                for(Object key : ((JSONObject)ref_json).keySet())
+                    right_cmp_json(((JSONObject)json).get(key), ((JSONObject)ref_json).get(key));
+        } else if(!json.equals(ref_json))
             throw new Exception(String.format("FAILED! (%s != %s)", json, ref_json));
     }
     

@@ -25,53 +25,55 @@
 * THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package tech.janky.jarop.rop;
+package tech.janky.jarop;
+
+import java.lang.ref.WeakReference;
+import java.util.Stack;
+
+import tech.janky.jarop.rop.ROPE;
+import tech.janky.jarop.rop.RopHandle;
+import tech.janky.jarop.rop.RopLib;
 
 
 /**
 * @version 0.3.0
-* @since   0.2
+* @since   0.3.0
 */
-final public class RopHandle implements Comparable<RopHandle> {
-    protected RopHandle(int type, boolean isNull, byte[] data) {
-        this.type = type;
-        this.isnull = isNull;
-        this.data = data;
-        source = null;
-        src_i = 0;
+public class RopRecipient extends RopObject {
+    protected RopRecipient(RopBind own, RopHandle rid) throws RopError {
+        if(rid.isNull())
+            throw new RopError(RopBind.ROP_ERROR_NULL_HANDLE);
+        this.own = new WeakReference<RopBind>(own);
+        this.lib = own.getLib();
+        this.rid = rid;
+        this.outs = new Stack<Object>();
     }
 
-    public static RopHandle Cast2Str(RopHandle hnd) {
-        return new RopHandle(1, hnd.isnull, hnd.data);
+    protected int Close() {
+        int ret = ROPE.RNP_SUCCESS;
+        if(rid != null) {
+            rid = null;
+        }
+        return ret;
     }
-
-    public static String Str(RopHandle hnd) {
-        return hnd!=null? Cast2Str(hnd).toString() : null;
-    }
-
-    public boolean isNull() {
-        return isnull;
-    }
-
-    @Override
-    public native String toString();
-    public native byte[] toBytes(long len);
-    public native int WriteString(Object buf, int maxLen);
-    public native long WriteBytes(byte[] buf, long len);
-    public native void ClearMemory(long len);
-    public void ClearMemory() { ClearMemory(-1); }
     
-    public int compareTo(RopHandle rh) {
-        int comp = 0;
-        int len1 = data.length, len2 = rh.data.length;
-        for(int idx = 0, len = Math.min(len1, len2); comp == 0 && idx < len; idx++)
-            comp = (data[idx]==rh.data[idx]? 0 : (data[idx]<rh.data[idx]? -1 : 1));
-        return comp==0&&len1!=len2? (len1<len2? -1 : 1) : comp;
+    public RopHandle getHandle() {
+        return rid;
     }
 
-    protected int type;
-    protected boolean isnull;
-    protected byte[] data;
-    protected Object source;
-    protected int src_i;
+    // API
+
+    public String get_keyid() throws RopError {
+        int ret = lib.rnp_recipient_get_keyid(rid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    public String get_alg() throws RopError {
+        int ret = lib.rnp_recipient_get_alg(rid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    
+    private WeakReference<RopBind> own;
+    private RopLib lib;
+    private RopHandle rid;
+    private Stack<Object> outs;
 }
