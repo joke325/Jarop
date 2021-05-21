@@ -30,7 +30,7 @@ package tech.janky.jarop.rop;
 
 /**
 * Definitions
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 class RopLibDef {
@@ -65,10 +65,15 @@ class RopLibDef {
     public final static int RNP_LOAD_SAVE_PUBLIC_KEYS = (1 << 0);
     public final static int RNP_LOAD_SAVE_SECRET_KEYS = (1 << 1);
     public final static int RNP_LOAD_SAVE_PERMISSIVE = (1 << 8);
+    public final static int RNP_LOAD_SAVE_SINGLE = (1 << 9);
 
     // Flags for output structure creation.
     public final static int RNP_OUTPUT_FILE_OVERWRITE = (1 << 0);
     public final static int RNP_OUTPUT_FILE_RANDOM = (1 << 1);
+
+    // User id type
+    public final static int RNP_USER_ID = 1;
+    public final static int RNP_USER_ATTR = 2;
 
     // Algorithm Strings
     

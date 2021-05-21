@@ -2,7 +2,7 @@ find_package(Java 1.8 REQUIRED COMPONENTS Development)
 include(UseJava)
 
 set(JAROP_JAR_NAME    jarop)
-set(JAROP_JAR_VERSION 0.3)
+set(JAROP_JAR_VERSION 0.14)
 
 set(JAROP_JAR_OUTDIR "${PROJECT_SOURCE_DIR}/bin/Release")
 set(JAROP_JAR_PATH "${JAROP_JAR_OUTDIR}/${JAROP_JAR_NAME}-${JAROP_JAR_VERSION}.jar")

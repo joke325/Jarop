@@ -38,7 +38,7 @@ import tech.janky.jarop.rop.RopLib;
 
 
 /**
-* @version 0.2
+* @version 0.14.0
 * @since   0.2
 */
 public class RopSign extends RopObject {
@@ -66,6 +66,10 @@ public class RopSign extends RopObject {
 
     // API
 
+    public String get_type() throws RopError {
+        int ret = lib.rnp_signature_get_type(sgid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
     public String alg() throws RopError {
         int ret = lib.rnp_signature_get_alg(sgid, outs);
         return Util.PopString(lib, outs, ret, true);
@@ -81,6 +85,10 @@ public class RopSign extends RopObject {
     public String keyid() throws RopError {
         int ret = lib.rnp_signature_get_keyid(sgid, outs);
         return Util.PopString(lib, outs, ret, true);
+    }
+    public void is_valid() throws RopError {
+        int ret = lib.rnp_signature_is_valid(sgid, 0);
+        Util.Return(ret);
     }
     public RopKey get_signer(int tag) throws RopError {
         int ret = lib.rnp_signature_get_signer(sgid, outs);

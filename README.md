@@ -41,4 +41,4 @@ java -classpath <classpaths> tech.janky.jarop.tests.RopExamplesTest
 
 ## Examples
 
-There are Java alternatives of [RNP's examples](https://github.com/rnpgp/rnp/src/examples) under the [examples](examples) folder.
+There are Java alternatives of [RNP's examples](https://github.com/rnpgp/rnp/tree/master/src/examples) under the [examples](examples) folder.

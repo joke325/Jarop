@@ -39,7 +39,7 @@ import tech.janky.jarop.rop.RopInputCallBack;
 
 
 /** 
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 public class RopInput extends RopObject implements RopInputCallBack {
@@ -133,6 +133,9 @@ public class RopInput extends RopObject implements RopInputCallBack {
     public void dump_packets_to_output_grip(RopOutput output) throws RopError {
         dump_packets_to_output(output, false, false, true);
     }
+    public void dump_packets_to_output(RopOutput output) throws RopError {
+        dump_packets_to_output(output, false, false, false);
+    }
     public void enarmor(RopOutput output, String type) throws RopError {
         int ret = lib.rnp_enarmor(iid, output!=null? output.getHandle() : null, type);
         Util.Return(ret);
@@ -144,6 +147,11 @@ public class RopInput extends RopObject implements RopInputCallBack {
     public String guess_contents() throws RopError {
         int ret = lib.rnp_guess_contents(iid, outs);
         return Util.PopString(lib, outs, ret, true);
+    }
+
+    public void output_pipe(RopOutput output) throws RopError {
+        int ret = lib.rnp_output_pipe(iid, output!=null? output.getHandle() : null);
+        Util.Return(ret);
     }
 
     private WeakReference<RopBind> own;

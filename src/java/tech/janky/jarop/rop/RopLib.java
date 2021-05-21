@@ -36,7 +36,7 @@ import java.net.URI;
 
 
 /**
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 public class RopLib {
@@ -52,7 +52,7 @@ public class RopLib {
     public void CleanUp() {
         for(RopHandle hnd : h2cb.keySet())
             ClearCallbacks(hnd);
-                nCleanUp();
+        nCleanUp();
     }
 
     public int rnp_ffi_destroy(RopHandle ffi) {
@@ -198,6 +198,7 @@ public class RopLib {
     public native int rnp_op_generate_get_key(RopHandle op, Vector<?> handle);
     public native int rnp_op_generate_destroy(RopHandle op);
     public native int rnp_key_export(RopHandle key, RopHandle output, int flags);
+    public native int rnp_key_export_autocrypt(RopHandle key, RopHandle subkey, Object uid, RopHandle output, int flags);
     public native int rnp_key_export_revocation(RopHandle key, RopHandle output, int flags, Object hash, Object code, Object reason);
     public native int rnp_key_revoke(RopHandle key, int flags, Object hash, Object code, Object reason);
     public native int rnp_key_remove(RopHandle key, int flags);
@@ -206,20 +207,28 @@ public class RopLib {
     public native int rnp_dearmor(RopHandle input, RopHandle output);
     public native int rnp_key_get_primary_uid(RopHandle key, Vector<?> uid);
     public native int rnp_key_get_uid_count(RopHandle key, Vector<?> count);
-    public native int rnp_key_get_uid_at(RopHandle key, int idx, Object uid);
+    public native int rnp_key_get_uid_at(RopHandle key, int idx, Vector<?> uid);
     public native int rnp_key_get_uid_handle_at(RopHandle key, int idx, Vector<?> uid);
+    public native int rnp_uid_get_type(RopHandle uid, Vector<?> type);
+    public native int rnp_uid_get_data(RopHandle uid, Vector<?> data, Vector<?> size);
+    public native int rnp_uid_is_primary(RopHandle uid, Vector<?> primary);
+    public native int rnp_uid_is_valid(RopHandle uid, Vector<?> valid);
     public native int rnp_key_get_signature_count(RopHandle key, Vector<?> count);
     public native int rnp_key_get_signature_at(RopHandle key, int idx, Vector<?> sig);
+    public native int rnp_key_get_revocation_signature(RopHandle key, Vector<?> sig);
     public native int rnp_uid_get_signature_count(RopHandle uid, Vector<?> count);
     public native int rnp_uid_get_signature_at(RopHandle uid, int idx, Vector<?> sig);
+    public native int rnp_signature_get_type(RopHandle sig, Vector<?> type);
     public native int rnp_signature_get_alg(RopHandle sig, Vector<?> alg);
     public native int rnp_signature_get_hash_alg(RopHandle sig, Vector<?> alg);
     public native int rnp_signature_get_creation(RopHandle sig, Vector<?> create);
     public native int rnp_signature_get_keyid(RopHandle sig, Vector<?> result);
     public native int rnp_signature_get_signer(RopHandle sig, Vector<?> key);
+    public native int rnp_signature_is_valid(RopHandle sig, int flags);
     public native int rnp_signature_packet_to_json(RopHandle sig, int flags, Vector<?> json);
     public native int rnp_signature_handle_destroy(RopHandle sig);
     public native int rnp_uid_is_revoked(RopHandle uid, Vector<?> result);
+    public native int rnp_uid_get_revocation_signature(RopHandle uid, Vector<?> sig);
     public native int rnp_uid_handle_destroy(Object uid);
     public native int rnp_key_get_subkey_count(RopHandle key, Vector<?> count);
     public native int rnp_key_get_subkey_at(RopHandle key, int idx, Vector<?> subkey);
@@ -232,16 +241,24 @@ public class RopLib {
     public native int rnp_key_get_keyid(RopHandle key, Vector<?> keyid);
     public native int rnp_key_get_grip(RopHandle key, Vector<?> grip);
     public native int rnp_key_get_primary_grip(RopHandle key, Vector<?> grip);
+    public native int rnp_key_get_primary_fprint(RopHandle key, Vector<?> fprint);
     public native int rnp_key_allows_usage(RopHandle key, Object usage, Vector<?> result);
     public native int rnp_key_get_creation(RopHandle key, Vector<?> result);
     public native int rnp_key_get_expiration(RopHandle key, Vector<?> result);
     public native int rnp_key_set_expiration(RopHandle key, long expiry);
+    public native int rnp_key_is_valid(RopHandle key, Vector<?> result);
+    public native int rnp_key_valid_till(RopHandle key, Vector<?> result);
     public native int rnp_key_is_revoked(RopHandle key, Vector<?> result);
     public native int rnp_key_get_revocation_reason(RopHandle key, Vector<?> result);
     public native int rnp_key_is_superseded(RopHandle key, Vector<?> result);
     public native int rnp_key_is_compromised(RopHandle key, Vector<?> result);
     public native int rnp_key_is_retired(RopHandle key, Vector<?> result);
     public native int rnp_key_is_locked(RopHandle key, Vector<?> result);
+    public native int rnp_key_get_protection_type(RopHandle key, Vector<?> type);
+    public native int rnp_key_get_protection_mode(RopHandle key, Vector<?> mode);
+    public native int rnp_key_get_protection_cipher(RopHandle key, Vector<?> cipher);
+    public native int rnp_key_get_protection_hash(RopHandle key, Vector<?> hash);
+    public native int rnp_key_get_protection_iterations(RopHandle key, Vector<?> iterations);
     public native int rnp_key_lock(RopHandle key);
     public native int rnp_key_unlock(RopHandle key, Object password);
     public native int rnp_key_is_protected(RopHandle key, Vector<?> result);
@@ -274,7 +291,7 @@ public class RopLib {
     public native int rnp_op_verify_detached_create(Vector<?> op, RopHandle ffi, RopHandle input, RopHandle signature);
     public native int rnp_op_verify_execute(RopHandle op);
     public native int rnp_op_verify_get_signature_count(RopHandle op, Vector<?> count);
-    public native int rnp_op_verify_get_signature_at(RopHandle op, int idx, Object sig);
+    public native int rnp_op_verify_get_signature_at(RopHandle op, int idx, Vector<?> sig);
     public native int rnp_op_verify_get_file_info(RopHandle op, Vector<?> filename, Vector<?> mtime);
     public native int rnp_op_verify_get_protection_info(RopHandle op, Vector<?> mode, Vector<?> cipher, Vector<?> valid);
     public native int rnp_op_verify_get_recipient_count(RopHandle op, Vector<?> count);
@@ -292,9 +309,9 @@ public class RopLib {
     public native int rnp_symenc_get_s2k_iterations(RopHandle symenc, Vector<?> iterations);
     public native int rnp_op_verify_destroy(RopHandle op);
     public native int rnp_op_verify_signature_get_status(RopHandle sig);
-    public native int rnp_op_verify_signature_get_handle(RopHandle sig,Object handle);
-    public native int rnp_op_verify_signature_get_hash(RopHandle sig, Object hash);
-    public native int rnp_op_verify_signature_get_key(RopHandle sig, Object key);
+    public native int rnp_op_verify_signature_get_handle(RopHandle sig,Vector<?> handle);
+    public native int rnp_op_verify_signature_get_hash(RopHandle sig, Vector<?> hash);
+    public native int rnp_op_verify_signature_get_key(RopHandle sig, Vector<?> key);
     public native int rnp_op_verify_signature_get_times(RopHandle sig, Vector<?> create, Vector<?> expires);
     public native void rnp_buffer_destroy(Object ptr);
     public native void rnp_buffer_clear(RopHandle ptr, long size);
@@ -331,6 +348,8 @@ public class RopLib {
     public native int rnp_identifier_iterator_create(RopHandle ffi, Object it, Object identifier_type);
     public native int rnp_identifier_iterator_next(RopHandle it, Vector<?> identifier);
     public native int rnp_identifier_iterator_destroy(Object it);
+    public native int rnp_output_pipe(RopHandle input, RopHandle output);
+    public native int rnp_output_armor_set_line_length(RopHandle output, long llen);
     
     private void ClearCallbacks(RopHandle hnd) {
         RopCB[] cbs =h2cb.get(hnd);
@@ -435,7 +454,7 @@ final class RopCB {
     protected long InReadCB(RopHandle buf, long len) {
         if(lstner1 != null && lstner1 instanceof RopInputCallBack) {
             RopInputCallBack.Ret ret = ((RopInputCallBack)lstner1).InputReadCallBack(ctx, len);
-            if(ret.ret && ret.inLen > 0)
+            if(ret.ret)
                 return buf.WriteBytes(ret.inBuf, Math.min(ret.inLen, len));
         }
         return -1;

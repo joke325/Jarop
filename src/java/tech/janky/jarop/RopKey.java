@@ -39,7 +39,7 @@ import tech.janky.jarop.rop.RopLib;
 
 
 /** 
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 public class RopKey extends RopObject {
@@ -83,6 +83,10 @@ public class RopKey extends RopObject {
         int ret = lib.rnp_key_get_primary_grip(kid, outs);
         return Util.PopString(lib, outs, ret, true);
     }
+    public String primary_fprint() throws RopError {
+        int ret = lib.rnp_key_get_primary_fprint(kid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
     public String fprint() throws RopError {
         int ret = lib.rnp_key_get_fprint(kid, outs);
         return Util.PopString(lib, outs, ret, true);
@@ -107,6 +111,20 @@ public class RopKey extends RopObject {
         int ret = lib.rnp_key_set_expiration(kid, Util.TimeDelta2Sec(expiry));
         Util.Return(ret);
     }
+    public boolean is_valid() throws RopError {
+        int ret = lib.rnp_key_is_valid(kid, outs);
+        return Util.PopBool(lib, outs, ret, true);
+    }
+    public Instant valid_till() throws RopError {
+        int ret = lib.rnp_key_valid_till(kid, outs);
+        long dt = Util.PopLong(lib, outs, ret, true);
+        Instant dtime = Instant.ofEpochSecond(dt);
+        if(dt == 0)
+            dtime = Instant.MIN;
+        else if(dt == 0xffffffffl)
+            dtime = Instant.MAX;
+        return dtime;
+    }
     public boolean is_revoked() throws RopError {
         int ret = lib.rnp_key_is_revoked(kid, outs);
         return Util.PopBool(lib, outs, ret, true);
@@ -126,6 +144,26 @@ public class RopKey extends RopObject {
     public boolean is_locked() throws RopError {
         int ret = lib.rnp_key_is_locked(kid, outs);
         return Util.PopBool(lib, outs, ret, true);
+    }
+    public String protection_type() throws RopError {
+        int ret = lib.rnp_key_get_protection_type(kid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    public String protection_mode() throws RopError {
+        int ret = lib.rnp_key_get_protection_mode(kid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    public String protection_cipher() throws RopError {
+        int ret = lib.rnp_key_get_protection_cipher(kid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    public String protection_hash() throws RopError {
+        int ret = lib.rnp_key_get_protection_hash(kid, outs);
+        return Util.PopString(lib, outs, ret, true);
+    }
+    public int protection_iterations() throws RopError {
+        int ret = lib.rnp_key_get_protection_iterations(kid, outs);
+        return Util.PopInt(lib, outs, ret, true);
     }
     public boolean is_protected() throws RopError {
         int ret = lib.rnp_key_is_protected(kid, outs);
@@ -282,6 +320,15 @@ public class RopKey extends RopObject {
     public RopSign get_signature_at(int idx) throws RopError {
         return get_signature_at(idx, 0);
     }
+    public RopSign get_revocation_signature(int tag) throws RopError {
+        int ret = lib.rnp_key_get_revocation_signature(kid, outs);
+        RopSign sign = new RopSign(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(sign, tag);
+        return sign;
+    }
+    public RopSign get_revocation_signature() throws RopError {
+        return get_revocation_signature(0);
+    }
     public void export(RopOutput output, boolean pub, boolean sec, boolean subkey, boolean armored) throws RopError {
         RopHandle outp = (output!=null? output.getHandle() : null);
         int flags = (pub? ROPD.RNP_KEY_EXPORT_PUBLIC : 0);
@@ -308,6 +355,12 @@ public class RopKey extends RopObject {
     }
     public void export_secret(RopOutput output) throws RopError {
         export(output, false, true, false, false);
+    }
+    public void export_autocrypt(RopKey subkey, String uid, RopOutput output) throws RopError {
+        RopHandle subk = (subkey!=null? subkey.getHandle() : null);
+        RopHandle outp = (output!=null? output.getHandle() : null);
+        int ret = lib.rnp_key_export_autocrypt(kid, subk, uid, outp, 0);
+        Util.Return(ret);
     }
     public void remove(boolean pub, boolean sec, boolean subkeys) throws RopError {
         int flags = (pub? ROPD.RNP_KEY_REMOVE_PUBLIC : 0);

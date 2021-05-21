@@ -237,6 +237,7 @@ ROP_DYN_IMPORT2(rnp_result_t, -1,
                     rnp_key_handle_t *);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_op_generate_destroy, rnp_op_generate_t);
 ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_key_export, rnp_key_handle_t, rnp_output_t, uint32_t);
+ROP_DYN_IMPORT5(rnp_result_t, -1, rnp_key_export_autocrypt, rnp_key_handle_t, rnp_key_handle_t, const char *, rnp_output_t, uint32_t);
 ROP_DYN_IMPORT6(rnp_result_t, -1, rnp_key_export_revocation, rnp_key_handle_t, rnp_output_t, uint32_t, const char*, const char*, const char*);
 ROP_DYN_IMPORT5(rnp_result_t, -1, rnp_key_revoke, rnp_key_handle_t, uint32_t, const char*, const char*, const char*);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_remove, rnp_key_handle_t, uint32_t);
@@ -248,12 +249,18 @@ ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_uid_count, rnp_key_handle_t, size_
 ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_key_get_uid_at, rnp_key_handle_t, size_t, char **);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_key_get_uid_handle_at, rnp_key_handle_t, size_t, rnp_uid_handle_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_get_type, rnp_uid_handle_t, uint32_t *);
+ROP_DYN_IMPORT3(rnp_result_t, -1, rnp_uid_get_data, rnp_uid_handle_t, void **, size_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_is_primary, rnp_uid_handle_t, bool *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_is_valid, rnp_uid_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_signature_count, rnp_key_handle_t, size_t *);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_key_get_signature_at, rnp_key_handle_t, size_t, rnp_signature_handle_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_revocation_signature, rnp_key_handle_t, rnp_signature_handle_t *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_get_signature_count, rnp_uid_handle_t, size_t *);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_uid_get_signature_at, rnp_uid_handle_t, size_t, rnp_signature_handle_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_signature_get_type, rnp_signature_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_signature_get_alg, rnp_signature_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1,
                     rnp_signature_get_hash_alg,
@@ -268,10 +275,12 @@ ROP_DYN_IMPORT2(rnp_result_t, -1,
                     rnp_signature_get_signer,
                     rnp_signature_handle_t,
                     rnp_key_handle_t *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_signature_is_valid, rnp_signature_handle_t, uint32_t);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_signature_packet_to_json, rnp_signature_handle_t, uint32_t, char **);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_signature_handle_destroy, rnp_signature_handle_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_is_revoked, rnp_uid_handle_t, bool *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_uid_get_revocation_signature, rnp_uid_handle_t, rnp_signature_handle_t *);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_uid_handle_destroy, rnp_uid_handle_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_subkey_count, rnp_key_handle_t, size_t *);
 ROP_DYN_IMPORT3(
@@ -292,17 +301,25 @@ ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_fprint, rnp_key_handle_t, char **)
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_keyid, rnp_key_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_grip, rnp_key_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_primary_grip, rnp_key_handle_t, char **);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_primary_fprint, rnp_key_handle_t, char **);
 ROP_DYN_IMPORT3(
 rnp_result_t, -1, rnp_key_allows_usage, rnp_key_handle_t, const char *, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_creation, rnp_key_handle_t, uint32_t *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_expiration, rnp_key_handle_t, uint32_t *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_set_expiration, rnp_key_handle_t, uint32_t);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_valid, rnp_key_handle_t, bool *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_valid_till, rnp_key_handle_t, uint32_t *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_revoked, rnp_key_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_revocation_reason, rnp_key_handle_t, char **);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_superseded, rnp_key_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_compromised, rnp_key_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_retired, rnp_key_handle_t, bool *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_locked, rnp_key_handle_t, bool *);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_protection_type, rnp_key_handle_t, char **);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_protection_mode, rnp_key_handle_t, char **);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_protection_cipher, rnp_key_handle_t, char **);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_protection_hash, rnp_key_handle_t, char **);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_get_protection_iterations, rnp_key_handle_t, size_t *);
 ROP_DYN_IMPORT1(rnp_result_t, -1, rnp_key_lock, rnp_key_handle_t);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_unlock, rnp_key_handle_t, const char *);
 ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_key_is_protected, rnp_key_handle_t, bool *);
@@ -527,6 +544,8 @@ ROP_DYN_IMPORT2(rnp_result_t, -1,
 ROP_DYN_IMPORT1(rnp_result_t, -1,
                     rnp_identifier_iterator_destroy,
                     rnp_identifier_iterator_t);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_output_pipe, rnp_input_t, rnp_output_t);
+ROP_DYN_IMPORT2(rnp_result_t, -1, rnp_output_armor_set_line_length, rnp_output_t, size_t);
 
 #ifdef __cplusplus
 

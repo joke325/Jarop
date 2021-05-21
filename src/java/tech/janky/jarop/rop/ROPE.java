@@ -29,7 +29,7 @@ package tech.janky.jarop.rop;
 
 
 /**
-* @version 0.2
+* @version 0.14.0
 * @since   0.2
 */
 class RopErr {
@@ -75,6 +75,7 @@ class RopErr {
     public final static int RNP_ERROR_NO_SIGNATURES_FOUND = rnp_error_bad_state+10;
     
     public final static int RNP_ERROR_SIGNATURE_EXPIRED = rnp_error_bad_state+11;
+    public final static int RNP_ERROR_VERIFICATION_FAILED = rnp_error_bad_state+12;
 
     // Parsing
     

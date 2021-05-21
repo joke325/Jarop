@@ -37,7 +37,7 @@ import tech.janky.jarop.rop.RopOutputCallBack;
 
 
 /**
-* @version 0.2
+* @version 0.14.0
 * @since   0.2
 */
 public class RopOutput extends RopObject implements RopOutputCallBack {
@@ -112,6 +112,11 @@ public class RopOutput extends RopObject implements RopOutputCallBack {
     public long write(RopData data) throws RopError {
         int ret = lib.rnp_output_write(oid, data.getDataObj(), data.getDataLen(), outs);
         return Util.PopLong(lib, outs, ret, true);
+    }
+
+    public void armor_set_line_length(long llen) throws RopError {
+        int ret = lib.rnp_output_armor_set_line_length(oid, llen);
+        Util.Return(ret);
     }
 
     private WeakReference<RopBind> own;

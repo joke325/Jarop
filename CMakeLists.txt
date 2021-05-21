@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(Jarop VERSION 0.3)
+project(Jarop VERSION 0.14)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()

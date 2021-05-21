@@ -36,7 +36,7 @@ import tech.janky.jarop.rop.RopLib;
 
 
 /**
-* @version 0.2
+* @version 0.14.0
 * @since   0.2
 */
 public class RopUidHandle extends RopObject {
@@ -61,7 +61,26 @@ public class RopUidHandle extends RopObject {
     }
     
     // API
-
+    
+    public int get_type() throws RopError {
+        int ret = lib.rnp_uid_get_type(huid, outs);
+        return Util.PopInt(lib, outs, ret, true);
+    }
+    public RopData get_data() throws RopError {
+        int ret = lib.rnp_uid_get_data(huid, outs, outs);
+        long len = Util.PopLong(lib, outs, ret, false);
+        RopData data = new RopData(own.get(), Util.PopHandle(lib, outs, ret, true), len);
+        own.get().PutObj(data, 0);
+        return data;
+    }
+    public boolean is_primary() throws RopError {
+        int ret = lib.rnp_uid_is_primary(huid, outs);
+        return Util.PopBool(lib, outs, ret, true);
+    }
+    public boolean is_valid() throws RopError {
+        int ret = lib.rnp_uid_is_valid(huid, outs);
+        return Util.PopBool(lib, outs, ret, true);
+    }
     public int signature_count() throws RopError {
         int ret = lib.rnp_uid_get_signature_count(huid, outs);
         return Util.PopInt(lib, outs, ret, true);
@@ -78,6 +97,15 @@ public class RopUidHandle extends RopObject {
     }
     public RopSign get_signature_at(int idx) throws RopError {
         return get_signature_at(idx, 0);
+    }
+    public RopSign get_revocation_signature(int tag) throws RopError {
+        int ret = lib.rnp_uid_get_revocation_signature(huid, outs);
+        RopSign sign = new RopSign(own.get(), Util.PopHandle(lib, outs, ret, true));
+        own.get().PutObj(sign, tag);
+        return sign;
+    }
+    public RopSign get_revocation_signature() throws RopError {
+        return get_revocation_signature(0);
     }
 
     private WeakReference<RopBind> own;

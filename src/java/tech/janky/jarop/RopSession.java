@@ -40,7 +40,7 @@ import tech.janky.jarop.rop.RopKeyCallBack;
 
 /**
 * Wraps FFI related ops
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 public class RopSession extends RopObject implements RopPassCallBack, RopKeyCallBack {
@@ -185,6 +185,9 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public void load_keys_secret(String format, RopInput input) throws RopError {
         load_keys(format, input, false, true);
     }    
+    public void load_keys(String format, RopInput input) throws RopError {
+        load_keys(format, input, true, true);
+    }
     public void unload_keys(boolean pub, boolean sec) throws RopError {
         int flags = (pub? ROPD.RNP_KEY_UNLOAD_PUBLIC : 0);
         flags |= (sec? ROPD.RNP_KEY_UNLOAD_SECRET : 0);
@@ -197,6 +200,9 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public void unload_keys_secret() throws RopError {
         unload_keys(false, true);
     }    
+    public void unload_keys() throws RopError {
+        unload_keys(true, true);
+    }
     private RopKey PutKey(RopHandle keyHnd, int tag) throws RopError {
         RopKey key = new RopKey(own.get(), keyHnd);
         own.get().PutObj(key, tag);
@@ -251,33 +257,41 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     public RopKey generate_key_ex(String keyAlg, String subAlg, int keyBits, int subBits, String keyCurve, String subCurve, String userid, String password) throws RopError {
         return generate_key_ex(keyAlg, subAlg, keyBits, subBits, keyCurve, subCurve, userid, password, 0);
     }	
-    public RopData import_keys(RopInput input, boolean pub, boolean sec, boolean perm) throws RopError {
+    public RopData import_keys(RopInput input, boolean pub, boolean sec, boolean perm, boolean sngl) throws RopError {
         RopHandle inp = (input!=null? input.getHandle() : null);
         int flags = (pub? ROPD.RNP_LOAD_SAVE_PUBLIC_KEYS : 0);
         flags |= (sec? ROPD.RNP_LOAD_SAVE_SECRET_KEYS : 0);
         flags |= (perm? ROPD.RNP_LOAD_SAVE_PERMISSIVE : 0);
+        flags |= (sngl? ROPD.RNP_LOAD_SAVE_SINGLE : 0);
         int ret = lib.rnp_import_keys(sid, inp, flags, outs);
-        RopData data = new RopData(own.get(), Util.PopHandle(lib, outs, ret, true), 0);
-        own.get().PutObj(data, 0);
-        return data;
+        RopHandle hnd = Util.PopHandle(lib, outs, ret!=ROPE.RNP_ERROR_EOF? ret : ROPE.RNP_SUCCESS, true);
+        if(ret != ROPE.RNP_ERROR_EOF) {
+            RopData data = new RopData(own.get(), hnd, 0);
+            own.get().PutObj(data, 0);
+            return data;
+        }
+        return null;
     }
     public RopData import_keys(RopInput input, boolean pub, boolean sec) throws RopError {
-        return import_keys(input, pub, sec, false);
+        return import_keys(input, pub, sec, false, false);
     }
     public RopData import_keys_public(RopInput input, boolean perm) throws RopError {
-        return import_keys(input, true, false, perm);
+        return import_keys(input, true, false, perm, false);
     }
     public RopData import_keys_public(RopInput input) throws RopError {
-        return import_keys(input, true, false, false);
+        return import_keys(input, true, false, false, false);
     }
     public RopData import_keys_secret(RopInput input, boolean perm) throws RopError {
-        return import_keys(input, false, true, perm);
+        return import_keys(input, false, true, perm, false);
     }
     public RopData import_keys_secret(RopInput input) throws RopError {
-        return import_keys(input, false, true, false);
+        return import_keys(input, false, true, false, false);
     }
     public RopData import_keys(RopInput input) throws RopError {
-        return import_keys(input, false, false, false);
+        return import_keys(input, true, true, false, false);
+    }
+    public RopData import_keys_single(RopInput input, boolean pub, boolean sec) throws RopError {
+        return import_keys(input, pub, sec, false, true);
     }
 
     public void set_pass_provider(SessionPassCallBack getpasscb, Object getpasscbCtx) throws RopError {
@@ -325,6 +339,9 @@ public class RopSession extends RopObject implements RopPassCallBack, RopKeyCall
     }
     public void save_keys_secret(String format, RopOutput output) throws RopError {
         save_keys(format, output, false, true);
+    }
+    public void save_keys(String format, RopOutput output) throws RopError {
+        save_keys(format, output, true, true);
     }
     public RopData generate_key_json(RopData json) throws RopError {
         int ret = lib.rnp_generate_key_json(sid, json.getDataObj(), outs);

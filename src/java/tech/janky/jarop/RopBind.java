@@ -43,7 +43,7 @@ import tech.janky.jarop.rop.ROPD;
 
 /**
 * Root object of bindings for the RNP OpenPGP library
-* @version 0.3.0
+* @version 0.14.0
 * @since   0.2
 */
 public class RopBind {
@@ -269,11 +269,12 @@ public class RopBind {
         
         // collect tags to delete
         List<Integer> dtags = new LinkedList<Integer>();
+        List<Integer> tags2del = new LinkedList<Integer>();
         if(from != null) {
             int idx = tags.indexOf(from);
             if(!(idx < 0))
                 dtags = tags.subList(idx, tags.size());
-        } else if(tag == 0 && tags.size() > 1)
+        } else if(tag == 0 && tags.size() > 0)
             dtags.add(tags.getLast());
         else
             dtags.add(new Integer(tag));
@@ -311,12 +312,15 @@ public class RopBind {
             }
             
             // delete obsolete tags
-            if(!t2objs.containsKey(tg)) {
-                tags.remove(tg);
-                if(tags.size() == 1)
-                    this.cnt = tags.getLast().intValue();
-            }
+            if(object == null && objects == null && !t2objs.containsKey(tg))
+                tags2del.add(tg);
         }
+        for(Integer tg : tags2del)
+            tags.remove(tg);
+        if(tags.size() == 0)
+            tags.add(1);
+        if(tags.size() == 1)
+            this.cnt = tags.getLast().intValue();
 
         if(ret != ROPE.RNP_SUCCESS)
             throw new RopError(ret);
@@ -364,7 +368,7 @@ public class RopBind {
     }
 
     public long ropid() {
-        return 1592576775;
+        return 1610638124;
     }
 
     // Constants
